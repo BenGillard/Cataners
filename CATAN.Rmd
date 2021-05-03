@@ -1,0 +1,202 @@
+---
+title: "CATAN"
+author: "Gillard BT"
+date: "Updated: `r Sys.Date()`"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 4
+    theme: cerulean
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, tidy = TRUE)
+```
+
+#CATAN
+
+A relentless battle between six entrepid resource miners.
+
+##Players
+
+Our competitors began this tournament as friends...
+
+<video width="640" height="480" autoplay loop muted>
+  <source src="Cataners.mp4" type="video/mp4">
+</video>
+
+##Meeting deets
+
+~~Same meeting every week - use breakout rooms to do both games simultaneously.~~
+
+~~Meeting ID: 966 8541 9508~~
+
+~~Password: 673102~~
+
+~~[Shortcut link to meeting](https://bristol-ac-uk.zoom.us/j/96685419508?pwd=alkxK3Z4QzNLUS9ocmQ1Q3FJSEg5QT09)~~
+
+**UPDATE**
+
+Join the [Discord](https://discord.com/) channel every week.
+
+##Fixture List
+
+Randomly allocated for a ten week season. Good luck everyone!
+
+The next upcoming fixture is highlighted in <span style="color: green;">green</span> for your convenience.
+
+```{r Fixtures}
+Players<- c("Ben", "Justyna", "Lewis", "Alice", "Mitch", "Helen")
+
+set.seed(666)
+Week<- sample(1:10)
+
+Saturdays<- seq(as.Date("2021-03-13"),length.out = 10,by='week')
+
+Game<- data.frame()
+for (w in Week) {
+set.seed(w)
+Game1<- sample(Players)[1:3]
+Game2<- Players[!Players %in% Game1]
+latest<- cbind(as.data.frame(rbind(Game1, Game2)), WeekNo = w, GameDate = Saturdays[w])
+Game<- rbind(Game, latest)
+}
+
+row.names(Game)<- NULL
+Game<- Game[order(Game$WeekNo),]
+colnames(Game)<- c("Player1", "Player2", "Player3", "WeekNo", "Game Date")
+Game[which(Game$WeekNo == 4),1:3] <- rep("BYE WEEK", 3)
+library(kableExtra)
+kbl(Game, row.names = FALSE, caption = "Fixture List: Season 1", align = "l") %>% kable_styling(bootstrap_options = "striped") %>% row_spec(which(Game$`Game Date` < Sys.Date()), color = "grey", strikeout = T) %>% row_spec(which(Game$`Game Date` > Sys.Date())[1:2], color = "green", bold = T) 
+```
+
+#Results
+
+What has happened in the epic encounters thus far?
+
+##Leaderboard
+
+In the event 2 players are on level points, the player with more wins ranks higher.
+
+```{r dataImport, echo=FALSE, message=FALSE}
+library(tidyverse)
+# Individual Hole Performance
+Games<- read.csv("CatanStats.csv", header = TRUE, stringsAsFactors = TRUE, fileEncoding = "UTF-8-BOM")
+Games$GameDate<- as.Date(Games$GameDate, format = "%d/%m/%y")
+Games$Game_Time<- round(x = Games$Game_Time, digits = 0) #crude rounding of times - will lose a small amount of accuracy that may accumulate over time. Alternative is an issue with summing total time that doesn't properly convert seconds to minutes.
+```
+
+```{r Leaderboard, eval=TRUE}
+PlayerData<- lapply(levels(Games$Player), function(x) subset(Games, subset = Games$Player == x))
+names(PlayerData)<- levels(Games$Player)
+
+Scores<- lapply(PlayerData, function(x) data.frame(Wins = sum(x$Position == 1), RunnerUp = sum(x$Position == 2), Loser = sum(x$Position == 3)))
+
+Scores<- lapply(Scores, function(x) cbind(x, Pts = (x$Wins * 3) + (x$RunnerUp * 2) + (x$Loser * 1)))
+
+Leaderboard <- do.call("rbind", Scores)
+kbl(Leaderboard[order(Leaderboard$Pts, Leaderboard$Wins, decreasing = TRUE),], caption = "Table of Champions", align = "l") %>% kable_classic() %>%  row_spec(1, bold = T, background = "#c9b037") %>% row_spec(2, bold = T, background = "#b4b4b4") %>% row_spec(3, bold = T, background = "#ad8a56")
+```
+
+
+##Extra stats
+
+Who doesn't love extra stats to obsess over?!
+
+###General Game Stats
+
+The **average time** for a game to be completed this season was `r format(mean(Games$Game_Time), digits = 2)` minutes. The **average turns** per game was `r format(mean(Games$Game_Turns), digits = 1)`. The **speediest win** this season (by turns) was by `r Games$Player[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))]` in `r min(Games$Game_Turns)` turns (it took `r Games$Game_Time[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))]` minutes) on `r Games$GameDate[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))]`. The **longest slog** for a win this season saw `r Games$Player[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))]` triumph after `r max(Games$Game_Turns)` loooong turns on `r Games$GameDate[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))]` (it took `r Games$Game_Time[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))]` minutes).
+
+These plots allow comparison between players after `r length(unique(Games$GameDate))` games:
+
+***
+
+```{r GeneralGameStats, eval=FALSE}
+print(paste0("Average game time this season: ", format(mean(Games$Game_Time), digits = 2), " minutes"))
+
+print(paste0("Average turns per game this season: ", format(mean(Games$Game_Turns), digits = 1), " turns"))
+
+print(paste0("The quickest win so far was in ", min(Games$Game_Turns), " turns by ", Games$Player[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))], " on ", Games$GameDate[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))], " (", Games$Game_Time[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))], " minutes)"))
+
+print(paste0("The longest slog for a win so far was in ", max(Games$Game_Turns), " turns by ", Games$Player[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))], " on ", Games$GameDate[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))], " (", Games$Game_Time[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))], " minutes)"))
+```
+
+```{r ExtraStats}
+CatStats<- data.frame(row.names = names(PlayerData), TimePlayed = sapply(PlayerData, function(x) sum(x[["Game_Time"]])))
+for(st in colnames(Games)[5:14]){
+CatStats<- cbind(CatStats,  sapply(PlayerData, function(x) sum(x[[st]])))
+}
+colnames(CatStats)[2:ncol(CatStats)]<- colnames(Games)[5:14]
+```
+
+```{r StatPlots, fig.show='hold', out.width='50%', results='hide', warning=FALSE, message=FALSE}
+lapply(colnames(CatStats), function(x) ggplot(data = CatStats) + geom_col(aes(x = rownames(CatStats), y = .data[[x]], fill = rownames(CatStats))) + labs(title = paste0("Total ", x, " so far.")) + theme_classic() + theme(legend.position = "none") + xlab(label = "Cataners") + ylab(label = x))
+```
+
+How efficient are you at converting measly barns into metropolii? These gauges show the percentage of settlements that you have converted to cities.
+
+```{r gaugeplot, fig.align='center'}
+CatStats<- cbind(CatStats, City_Conversion_Percent = ((CatStats$VP_Cities/2))/(CatStats$VP_Settlements + (CatStats$VP_Cities/2))) #You get 2 VPs per city so they need to be halved for an appropriate ratio with settlements.
+
+CatStats <- CatStats %>% mutate(group=ifelse(City_Conversion_Percent <0.33, "red",
+ ifelse(City_Conversion_Percent <0.66, "orange","green")), label=paste0(format(City_Conversion_Percent*100, digits = 0), "%"))
+ 
+ggplot(data = CatStats, aes(fill = group, ymax = City_Conversion_Percent, ymin = 0, xmax = 2, xmin = 1)) +
+ geom_rect(aes(ymax=1, ymin=0, xmax=2, xmin=1), fill ="#ece8bd") +
+ geom_rect() + 
+ coord_polar(theta = "y",start=-pi/2) + xlim(c(0, 2)) + ylim(c(0,2)) +
+geom_text(aes(x = 0, y = 0, label = label, colour=group), size=5) + 
+  geom_text(aes(x=1.5, y=1.5, label=rownames(CatStats)), size=4.2) + 
+  facet_wrap(~rownames(CatStats), ncol = 3) +
+  theme_void() +
+  scale_fill_manual(values = c("red"="#C9146C", "orange"="#DA9112", "green"="#129188")) +
+ scale_colour_manual(values = c("red"="#C9146C", "orange"="#DA9112", "green"="#129188")) +
+ theme(strip.background = element_blank(),
+ strip.text.x = element_blank()) +
+ guides(fill=FALSE) +
+ guides(colour=FALSE) +
+ labs(title = "Your Settlement to City conversion rate")
+```
+
+This is the same data as the above bar plots but separated into plots for each player. This allows you to see what your mega point magnets are. And also the bits you surrender a lot. *Each plot is scaled individually*.
+
+```{r playerVPplots, out.width='50%', message=FALSE, results='hide'}
+PlayerPlotData<- CatStats[,c("VP_Settlements", "VP_Cities", "VP_DevCards", "Largest_Army", "Longest_Road")]
+PlayerPlotData$Largest_Army <- PlayerPlotData$Largest_Army*2
+PlayerPlotData$Longest_Road <- PlayerPlotData$Longest_Road*2
+PlayerPlotData<- PlayerPlotData %>% rownames_to_column(var = "Player") %>% pivot_longer(cols = c("VP_Settlements", "VP_Cities", "VP_DevCards", "Largest_Army", "Longest_Road"), names_to = "VPType", values_to = "Score")
+
+lapply(unique(PlayerPlotData$Player), function(x) PlayerPlotData[which(PlayerPlotData$Player == x),] %>% ggplot() + geom_col(aes(x = VPType, y = Score, fill = VPType)) + theme_minimal() + theme(legend.position = "right") + coord_polar(start = 0) + theme(axis.text = element_blank(), axis.title = element_blank()) + labs(title = paste0(x)))
+```
+
+> Ideas I've not got round to doing yet: Spice up the barplots with pictures?
+
+##Favourite Opponent
+
+Who have you crushed most often? Who has crushed you most often? Sure to engorge some [hubris-nemesis complexes](http://www.daedalustrust.com/wp-content/uploads/2012/01/Nemesis-essay.pdf)!
+
+```{r FaveOpponent}
+#find winners for each game (date and game number)
+  #find opponents (use filter from step 1)
+    #find highest count
+
+#find winners for each game (date and game number)
+Winners<- subset(Games, subset = Games$Position == 1, select = c("GameDate", "Game", "Player"))
+WinnersList<- lapply(unique(Winners$Player), function(x) Winners[Winners$Player == x,])
+ #find opponents (use filter from step 1)
+Losers<- lapply(WinnersList, function(x) do.call(rbind, lapply(1:nrow(x), function(y) Games[Games$GameDate %in% x[y,"GameDate"] & Games$Game %in% x[y,"Game"] & Games$Position != 1,1:4])))
+names(Losers)<- unique(Winners$Player)
+
+FaveOppo<- as.data.frame(sapply(Losers, function(x) sapply(unique(Games$Player), function(y) sum(x[["Player"]] == y), USE.NAMES = T), USE.NAMES = T))
+rownames(FaveOppo)<- unique(Games$Player)
+
+FaveOppo<- lapply(colnames(FaveOppo), function(x) FaveOppo[which(FaveOppo[[x]] == max(FaveOppo[[x]])),])
+names(FaveOppo)<- names(Losers)
+
+test<- sapply(names(FaveOppo), function(x) print(paste0(x, " is a WINNER and LOVES to play against ", rownames(FaveOppo[[x]]), " the MOST!")))
+```
