@@ -4,7 +4,7 @@ knit: (function(input_file, encoding) {
   out_dir <- 'docs';
   rmarkdown::render(input_file,
  encoding=encoding,
- output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+ output_file=file.path(dirname(input_file), out_dir, 'Cataners.html'))})
 author: "Gillard BT"
 date: "Updated: `r Sys.Date()`"
 output: 
@@ -59,9 +59,9 @@ The next upcoming fixture is highlighted in <span style="color: green;">green</s
 Players<- c("Ben", "Justyna", "Lewis", "Alice", "Mitch", "Helen")
 
 set.seed(666)
-Week<- sample(1:10)
+Week<- sample(1:12)
 
-Saturdays<- seq(as.Date("2021-03-13"),length.out = 10,by='week')
+Saturdays<- seq(as.Date("2021-03-13"),length.out = 12,by='week')
 
 Game<- data.frame()
 for (w in Week) {
@@ -76,6 +76,7 @@ row.names(Game)<- NULL
 Game<- Game[order(Game$WeekNo),]
 colnames(Game)<- c("Player1", "Player2", "Player3", "WeekNo", "Game Date")
 Game[which(Game$WeekNo == 4),1:3] <- rep("BYE WEEK", 3)
+Game[which(Game$WeekNo == 8),1:3] <- rep("BYE WEEK", 3)
 library(kableExtra)
 kbl(Game, row.names = FALSE, caption = "Fixture List: Season 1", align = "l") %>% kable_styling(bootstrap_options = "striped") %>% row_spec(which(Game$`Game Date` < Sys.Date()), color = "grey", strikeout = T) %>% row_spec(which(Game$`Game Date` > Sys.Date())[1:2], color = "green", bold = T) 
 ```
