@@ -23,11 +23,11 @@ text-align: justify}
 knitr::opts_chunk$set(echo = FALSE, tidy = TRUE)
 ```
 
-#CATAN
+# CATAN - SEASON 1.
 
 A relentless battle between six entrepid resource miners.
 
-##Players
+## Players
 
 Our competitors began this tournament as friends...
 
@@ -35,7 +35,7 @@ Our competitors began this tournament as friends...
   <source src="Cataners.mp4" type="video/mp4">
 </video>
 
-##Meeting deets
+## Meeting deets
 
 ~~Same meeting every week - use breakout rooms to do both games simultaneously.~~
 
@@ -49,7 +49,7 @@ Our competitors began this tournament as friends...
 
 Join the [Discord](https://discord.com/) channel every week.
 
-##Fixture List
+## Fixture List
 
 Randomly allocated for a ten week season. Good luck everyone!
 
@@ -78,14 +78,14 @@ colnames(Game)<- c("Player1", "Player2", "Player3", "WeekNo", "Game Date")
 Game[which(Game$WeekNo == 4),1:3] <- rep("BYE WEEK", 3)
 Game[which(Game$WeekNo == 8),1:3] <- rep("BYE WEEK", 3)
 library(kableExtra)
-kbl(Game, row.names = FALSE, caption = "Fixture List: Season 1", align = "l") %>% kable_styling(bootstrap_options = "striped") %>% row_spec(which(Game$`Game Date` < Sys.Date()), color = "grey", strikeout = T) %>% row_spec(which(Game$`Game Date` > Sys.Date())[1:2], color = "green", bold = T) 
+kbl(Game, row.names = FALSE, caption = "Fixture List: Season 1", align = "l") %>% kable_styling(bootstrap_options = "striped") %>% row_spec(which(Game$`Game Date` < Sys.Date()), color = "grey", strikeout = T) #%>% row_spec(which(Game$`Game Date` > Sys.Date())[1:2], color = "green", bold = T)
 ```
 
-#Results
+# Results
 
 What has happened in the epic encounters thus far?
 
-##Leaderboard
+## Leaderboard
 
 In the event 2 players are on level points, the player with more wins ranks higher.
 
@@ -95,6 +95,10 @@ library(tidyverse)
 Games<- read.csv("CatanStats.csv", header = TRUE, stringsAsFactors = TRUE, fileEncoding = "UTF-8-BOM")
 Games$GameDate<- as.Date(Games$GameDate, format = "%d/%m/%y")
 Games$Game_Time<- round(x = Games$Game_Time, digits = 0) #crude rounding of times - will lose a small amount of accuracy that may accumulate over time. Alternative is an issue with summing total time that doesn't properly convert seconds to minutes.
+
+#remove the finale from general season but save it in a separate object first
+Finale<- Games %>% filter(GameDate == "2020-06-24")
+Games<- Games %>% filter(GameDate != "2020-06-24") 
 ```
 
 ```{r Leaderboard, eval=TRUE}
@@ -106,15 +110,16 @@ Scores<- lapply(PlayerData, function(x) data.frame(Wins = sum(x$Position == 1), 
 Scores<- lapply(Scores, function(x) cbind(x, Pts = (x$Wins * 3) + (x$RunnerUp * 2) + (x$Loser * 1)))
 
 Leaderboard <- do.call("rbind", Scores)
-kbl(Leaderboard[order(Leaderboard$Pts, Leaderboard$Wins, decreasing = TRUE),], caption = "Table of Champions", align = "l") %>% kable_classic() %>%  row_spec(1, bold = T, background = "#c9b037") %>% row_spec(2, bold = T, background = "#b4b4b4") %>% row_spec(3, bold = T, background = "#ad8a56")
+kbl(Leaderboard[order(Leaderboard$Pts, Leaderboard$Wins, decreasing = TRUE),], caption = "FINAL Table of Champions", align = "l") %>% kable_classic() %>%  row_spec(1, bold = T, background = "#c9b037") %>% row_spec(2, bold = T, background = "#b4b4b4") %>% row_spec(3, bold = T, background = "#ad8a56")
 ```
 
+> **Justyna** is the regular season winner! Congratu-bloody-lations! Go to [THE FINALE] to see how the post season competition went down.
 
-##Extra stats
+## Extra stats
 
 Who doesn't love extra stats to obsess over?!
 
-###General Game Stats
+### General Game Stats
 
 The **average time** for a game to be completed this season was `r format(mean(Games$Game_Time), digits = 2)` minutes. The **average turns** per game was `r format(mean(Games$Game_Turns), digits = 1)`. The **speediest win** this season (by turns) was by `r Games$Player[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))]` in `r min(Games$Game_Turns)` turns (it took `r Games$Game_Time[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))]` minutes) on `r Games$GameDate[which(Games$Position == 1 & Games$Game_Turns == min(Games$Game_Turns))]`. The **longest slog** for a win this season saw `r Games$Player[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))]` triumph after `r max(Games$Game_Turns)` loooong turns on `r Games$GameDate[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))]` (it took `r Games$Game_Time[which(Games$Position == 1 & Games$Game_Turns == max(Games$Game_Turns))]` minutes).
 
@@ -180,13 +185,11 @@ PlayerPlotData<- PlayerPlotData %>% rownames_to_column(var = "Player") %>% pivot
 lapply(unique(PlayerPlotData$Player), function(x) PlayerPlotData[which(PlayerPlotData$Player == x),] %>% ggplot() + geom_col(aes(x = VPType, y = Score, fill = VPType)) + theme_minimal() + theme(legend.position = "right") + coord_polar(start = 0) + theme(axis.text = element_blank(), axis.title = element_blank()) + labs(title = paste0(x)))
 ```
 
-> Ideas I've not got round to doing yet: Spice up the barplots with pictures?
+## Favourite Opponent
 
-##Favourite Opponent
+Who have you crushed most often? Who has crushed you most often? Sure to engorge some [hubris-nemesis complexes](http://www.daedalustrust.com/wp-content/uploads/2012/01/Nemesis-essay.pdf)! Each plot shows how many times that player has defeated their opponents.
 
-Who have you crushed most often? Who has crushed you most often? Sure to engorge some [hubris-nemesis complexes](http://www.daedalustrust.com/wp-content/uploads/2012/01/Nemesis-essay.pdf)!
-
-```{r FaveOpponent}
+```{r FaveOpponent, fig.show='hold', out.width='50%', results='hide', warning=FALSE, message=FALSE}
 #find winners for each game (date and game number)
   #find opponents (use filter from step 1)
     #find highest count
@@ -201,8 +204,28 @@ names(Losers)<- unique(Winners$Player)
 FaveOppo<- as.data.frame(sapply(Losers, function(x) sapply(unique(Games$Player), function(y) sum(x[["Player"]] == y), USE.NAMES = T), USE.NAMES = T))
 rownames(FaveOppo)<- unique(Games$Player)
 
-FaveOppo<- lapply(colnames(FaveOppo), function(x) FaveOppo[which(FaveOppo[[x]] == max(FaveOppo[[x]])),])
-names(FaveOppo)<- names(Losers)
-
-test<- sapply(names(FaveOppo), function(x) print(paste0(x, " is a WINNER and LOVES to play against ", rownames(FaveOppo[[x]]), " the MOST!")))
+lapply(colnames(FaveOppo), function(x) ggplot(data = FaveOppo[-which(rownames(FaveOppo) == x),]) + geom_col(aes(x = rownames(FaveOppo[-which(rownames(FaveOppo) == x),]), y = .data[[x]], fill = heat.colors(5))) + ylab(label = paste0(x, "'s wins against opponent")) + xlab(label = "Loser Opponents") + scale_y_continuous(breaks = c(1:3)) + theme_classic() + theme(legend.position = "none"))
 ```
+
+# THE FINALE
+
+After a very hard fought season the epic final encounter saw Justyna (1st) play Ben (2nd) and Helen (3rd) in the megaboss finale with Mitch (4th) playing Lewis (5th) and Alice (6th) in a best-of-the-rest-slug-fest.
+
+Let's see how they fared and how the ultimate battle was won or lost.
+
+```{r finale, fig.show='hold', out.width='50%', results='hide', warning=FALSE, message=FALSE}
+#VP for both finales
+ggplot(data = Finale[Finale$Game == 1,]) + geom_col(aes(x = reorder(Player, -VP), y = VP, fill = Player)) + labs(title = "MEGABOSS FINALE VP") + theme_classic() + theme(legend.position = "none") + xlab(label = "Cataners") + ylab(label = "VP") + scale_y_continuous(breaks = c(1:10))
+
+ggplot(data = Finale[Finale$Game == 2,]) + geom_col(aes(x = reorder(Player, -VP), y = VP, fill = Player)) + labs(title = "BEST-OF-THE-REST-SLUG-FEST FINALE VP") + theme_classic() + theme(legend.position = "none") + xlab(label = "Cataners") + ylab(label = "VP") + scale_y_continuous(breaks = c(1:10))
+
+#points breakdown for finales
+FinaleStats<- Finale[,c("Player", "VP_Settlements", "VP_Cities", "VP_DevCards", "Largest_Army", "Longest_Road")]
+FinaleStats$Largest_Army <- FinaleStats$Largest_Army*2
+FinaleStats$Longest_Road <- FinaleStats$Longest_Road*2
+FinaleStats<- FinaleStats %>% pivot_longer(cols = c("VP_Settlements", "VP_Cities", "VP_DevCards", "Largest_Army", "Longest_Road"), names_to = "VPType", values_to = "Score")
+
+lapply(unique(FinaleStats$Player), function(x) FinaleStats[which(FinaleStats$Player == x),] %>% ggplot() + geom_col(aes(x = VPType, y = Score, fill = VPType)) + theme_minimal() + theme(legend.position = "right") + coord_polar(start = 0) + theme(axis.text = element_blank(), axis.title = element_blank()) + labs(title = paste0(x)))
+```
+
+So... that's it for now. Season 2 will begin soon hopefully.
